@@ -1,4 +1,4 @@
-module github.com/ted-vo/ilt-holdem-random-bot
+module github.com/ted-vo/ilt-poker-club-bot
 
 go 1.18
 

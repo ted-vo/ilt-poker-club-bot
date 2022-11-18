@@ -5,12 +5,11 @@ import (
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/ted-vo/ilt-holdem-random-bot/pkg/handler"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg/handler"
 )
 
 func main() {
-	log.Printf(os.Getenv("TELEGRAM_API_TOKEN"))
-	bot, err := tgbotapi.NewBotAPI("5684691650:AAHjtjzAvHTaz8-PNMRUbwy5KT0I-vKkQ9U")
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TOKEN"))
 	if err != nil {
 		log.Panic(err)
 	}

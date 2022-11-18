@@ -4,7 +4,7 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/ted-vo/ilt-holdem-random-bot/pkg"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 )
 
 var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
