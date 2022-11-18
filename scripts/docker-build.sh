@@ -1,9 +1,11 @@
 #!/bin/sh
-HOST_NAME="tedvo.dev"
-PROJECT_ID="ilt-poker-club-bot"
-IMAGE_NAME="golang"
+HOST_NAME="asia.gcr.io"
+PROJECT_ID="meepo-vn"
+IMAGE_NAME="ilt-poker-club-bot"
 IMAGE_VERSION="v1.0.0"
 
 TAG="$HOST_NAME/$PROJECT_ID/$IMAGE_NAME:$IMAGE_VERSION"
 
-docker build --pull --rm -f $FILE_PATH -t $TAG ./ --no-cache
+docker build --pull --rm -t $TAG ./ --no-cache
+
+docker push $TAG

@@ -7,6 +7,15 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var InlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Leader Board", "leaderboard"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Roll", "roll"),
+	),
+)
+
 func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	// Respond to the callback query, telling Telegram to show the user
 	// a message with the data received.

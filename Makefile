@@ -11,5 +11,9 @@ clean:
 build: prerequisites
 	go build -o ./build/$(BINARY_NAME) cmd/main.go
 
+build-linux: prerequisites
+	GOOS=linux GARCH=amd64 go build -o ./build/$(BINARY_NAME) cmd/main.go
+
 run: build
 	bash -c './build/$(BINARY_NAME)'
+

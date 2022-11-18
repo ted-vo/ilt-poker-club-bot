@@ -7,15 +7,6 @@ import (
 	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 )
 
-var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Leader Board", "leaderboard"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Roll", "roll"),
-	),
-)
-
 func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 	if !update.Message.IsCommand() { // ignore any non-command Messages
 		return nil
@@ -33,7 +24,7 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 		msg.Text = text
 	case "menu":
 		msg.Text = "Menu"
-		msg.ReplyMarkup = numericKeyboard
+		msg.ReplyMarkup = InlineKeyboard
 	default:
 		msg.Text = "I don't know that command"
 	}
