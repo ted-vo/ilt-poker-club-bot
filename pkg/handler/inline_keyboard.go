@@ -28,9 +28,10 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 
 	switch update.CallbackQuery.Data {
 	case "roll":
+		fmt.Printf("%v", update.CallbackQuery.From)
 		rolled := rand.Intn(12) + 1
 		roller := fmt.Sprintf("@%s", update.CallbackQuery.From.UserName)
-		if len(roller) == 0 {
+		if len(roller) < 5 {
 			roller = fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName)
 		}
 		msg.Text = fmt.Sprintf("%s rolled: %d", roller, rolled)
