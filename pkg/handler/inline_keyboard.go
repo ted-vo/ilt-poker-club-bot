@@ -8,11 +8,11 @@ import (
 )
 
 var InlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("Leader Board", "leaderboard"),
+	// ),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Leader Board", "leaderboard"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Roll", "roll"),
+		tgbotapi.NewInlineKeyboardButtonData(" 🎰 Roll", "roll"),
 	),
 )
 
@@ -29,7 +29,11 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	switch update.CallbackQuery.Data {
 	case "roll":
 		rolled := rand.Intn(12) + 1
-		msg.Text = fmt.Sprintf("@%s rolled: %d", update.CallbackQuery.From.UserName, rolled)
+		roller := fmt.Sprintf("@%s", update.CallbackQuery.From.UserName)
+		if len(roller) == 0 {
+			roller = fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName)
+		}
+		msg.Text = fmt.Sprintf("%s rolled: %d", roller, rolled)
 	case "leaderboard":
 		msg.Text = "Feature in development"
 	}

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -19,14 +20,23 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 	// Extract the command from the update.Message.
 	switch update.Message.Command() {
 	case "help":
-		text, _ := pkg.Parse("./config/help.html", struct{}{})
+		caller := fmt.Sprintf("@%s", update.Message.From.UserName)
+		if len(caller) == 0 {
+			caller = fmt.Sprintf("%s %s", update.Message.From.FirstName, update.Message.From.LastName)
+		}
+		text, _ := pkg.Parse("./config/help.html",
+			struct {
+				Caller string
+			}{
+				Caller: caller,
+			})
 		msg.ParseMode = pkg.HTLM
 		msg.Text = text
 	case "menu":
-		msg.Text = "Menu"
+		msg.Text = " 🎲 Roll đi nào mấy con báo 🐆 "
 		msg.ReplyMarkup = InlineKeyboard
 	default:
-		msg.Text = "I don't know that command"
+		msg.Text = "Tạm tời em không hiểu. Để em cập nhật thêm sau nhé!"
 	}
 
 	if _, err := handler.bot.Send(msg); err != nil {
