@@ -68,7 +68,7 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 	case HELP:
 		handler.help(update, &msg)
 	default:
-		msg.Text = "Tạm tời em không hiểu. Để em cập nhật thêm sau nhé!"
+		msg.Text = "Tính năng đang phát triển. Để em cập nhật thêm sau nhé!"
 	}
 
 	if len(msg.Text) != 0 {
