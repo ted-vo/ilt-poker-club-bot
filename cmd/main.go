@@ -2,25 +2,27 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
+	"github.com/apex/log"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 	"github.com/ted-vo/ilt-poker-club-bot/pkg/handler"
 )
 
 func main() {
+	log.SetHandler(pkg.NewLogHandler())
 	go startHTTPServer()
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TOKEN"))
 	if err != nil {
-		log.Panic(err)
+		log.Error(err.Error())
 	}
 
 	bot.Debug = os.Getenv("DEBUG") == "true"
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Infof("Authorized on account %s", bot.Self.UserName)
 
 	// Create a new UpdateConfig struct with an offset of 0. Offsets are used
 	// to make sure Telegram knows we've handled previous values and we don't
@@ -39,7 +41,7 @@ func main() {
 
 	for update := range updates {
 		if update.Message != nil { // If we got a message
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+			log.Infof("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
 			if update.Message.IsCommand() {
 				handler.Command(&update)
@@ -51,20 +53,20 @@ func main() {
 }
 
 func startHTTPServer() {
-	log.Print("starting server...")
+	log.Info("starting server...")
 	http.HandleFunc("/", httpHandler)
 
 	// Determine port for HTTP service.
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
-		log.Printf("defaulting to port %s", port)
+		log.Infof("defaulting to port %s", port)
 	}
 
 	// Start HTTP server.
-	log.Printf("listening on port %s", port)
+	log.Infof("listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
+		log.Error(err.Error())
 	}
 }
 
