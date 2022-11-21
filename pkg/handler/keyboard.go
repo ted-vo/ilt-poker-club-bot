@@ -45,6 +45,7 @@ type Keyboard interface {
 	roll(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
 	periodic_table(update *tgbotapi.Update)
 	profile(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
+	help(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
 }
 
 func (handler *MessageHandler) removeMessage(chatId int64, messageId int) {
@@ -64,6 +65,8 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 		handler.periodic_table(update)
 	case PROFILE:
 		handler.profile(update, &msg)
+	case HELP:
+		handler.help(update, &msg)
 	default:
 		msg.Text = "Tạm tời em không hiểu. Để em cập nhật thêm sau nhé!"
 	}
@@ -120,4 +123,16 @@ func (handler *MessageHandler) periodic_table(update *tgbotapi.Update) {
 	if _, err := bot.Send(msg); err != nil {
 		log.Error(err.Error())
 	}
+}
+
+func (handler *MessageHandler) help(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+	caller := handler.getCaller(update)
+	text, _ := pkg.Parse("./config/help.html",
+		struct {
+			Caller string
+		}{
+			Caller: caller,
+		})
+	msg.ParseMode = pkg.HTLM
+	msg.Text = text
 }

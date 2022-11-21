@@ -5,14 +5,7 @@ import (
 
 	"github.com/apex/log"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 )
-
-type Command interface {
-	help(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
-	menu(msg *tgbotapi.MessageConfig)
-	roll(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
-}
 
 func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 	if !update.Message.IsCommand() { // ignore any non-command Messages
@@ -51,18 +44,6 @@ func (handler *MessageHandler) getCaller(update *tgbotapi.Update) string {
 	}
 
 	return caller
-}
-
-func (handler *MessageHandler) help(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
-	caller := handler.getCaller(update)
-	text, _ := pkg.Parse("./config/help.html",
-		struct {
-			Caller string
-		}{
-			Caller: caller,
-		})
-	msg.ParseMode = pkg.HTLM
-	msg.Text = text
 }
 
 func (handler *MessageHandler) menu(msg *tgbotapi.MessageConfig) {
