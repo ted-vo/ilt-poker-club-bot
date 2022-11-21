@@ -25,8 +25,6 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 
 	// Extract the command from the update.Message.
 	switch update.Message.Command() {
-	case "help":
-		handler.help(update, &msg)
 	case OPEN:
 		msg.Text = " 📜 Menu đã được thêm vào"
 		msg.ReplyMarkup = KeyboardButton
