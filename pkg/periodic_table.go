@@ -1,5 +1,12 @@
 package pkg
 
-var PeriodicTable = func() map[int]string {
-	return map[int]string{}
-}
+import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+var PeriodicTableKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("AA"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("AKo"),
+	),
+)

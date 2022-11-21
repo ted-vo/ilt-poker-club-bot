@@ -45,6 +45,8 @@ func main() {
 
 			if update.Message.IsCommand() {
 				handler.Command(&update)
+			} else {
+				handler.Keyboard(&update)
 			}
 		} else if update.CallbackQuery != nil {
 			handler.InlineKeyboard(&update)
