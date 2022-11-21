@@ -2,7 +2,7 @@
 HOST_NAME="asia.gcr.io"
 PROJECT_ID="meepo-vn"
 IMAGE_NAME="ilt-poker-club-bot"
-IMAGE_VERSION="v1.0.3"
+IMAGE_VERSION="v1.0.4"
 
 TAG="$HOST_NAME/$PROJECT_ID/$IMAGE_NAME:$IMAGE_VERSION"
 
