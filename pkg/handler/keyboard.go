@@ -15,7 +15,7 @@ const (
 	OPEN           = "open"
 	CLOSE          = "close"
 	ROLL           = "🎲 Roll"
-	PREIODIC_TABLE = "📖 Priodic Table"
+	PERIODIC_TABLE = "📖 Periodic Table"
 	PROFILE        = "👤 Profile"
 	LEADERBOARD    = "🏆 Leaderboard"
 	HELP           = "❓ Help"
@@ -27,7 +27,7 @@ var KeyboardButton = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton(ROLL),
 	),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton(PREIODIC_TABLE),
+		tgbotapi.NewKeyboardButton(PERIODIC_TABLE),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(PROFILE),
@@ -61,14 +61,12 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 	switch update.Message.Text {
 	case ROLL:
 		handler.roll(update, &msg)
-	case PREIODIC_TABLE:
+	case PERIODIC_TABLE:
 		handler.periodic_table(update)
 	case PROFILE:
 		handler.profile(update, &msg)
 	case HELP:
 		handler.help(update, &msg)
-	default:
-		msg.Text = "Tính năng đang phát triển. Để em cập nhật thêm sau nhé!"
 	}
 
 	if len(msg.Text) != 0 {
