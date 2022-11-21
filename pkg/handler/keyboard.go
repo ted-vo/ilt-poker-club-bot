@@ -12,8 +12,8 @@ import (
 
 const (
 	CURRENCY       = "💵"
-	OPEN           = "!open"
-	CLOSE          = "!close"
+	OPEN           = "open"
+	CLOSE          = "close"
 	ROLL           = "🎲 Roll"
 	PREIODIC_TABLE = "📖 Priodic Table"
 	PROFILE        = "👤 Profile"
@@ -48,7 +48,9 @@ type Keyboard interface {
 }
 
 func (handler *MessageHandler) removeMessage(chatId int64, messageId int) {
-	handler.bot.Send(tgbotapi.NewDeleteMessage(chatId, messageId))
+	if _, err := handler.bot.Request(tgbotapi.NewDeleteMessage(chatId, messageId)); err != nil {
+		log.Errorf("delete message erorr: %s", err.Error())
+	}
 }
 
 func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
@@ -56,12 +58,6 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 
 	log.Debugf("%s", update.Message.Text)
 	switch update.Message.Text {
-	case OPEN:
-		msg.Text = " 📜 Menu đã được thêm vào"
-		msg.ReplyMarkup = KeyboardButton
-	case CLOSE:
-		msg.Text = " ❌  Loại bỏ Menu"
-		msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	case ROLL:
 		handler.roll(update, &msg)
 	case PREIODIC_TABLE:

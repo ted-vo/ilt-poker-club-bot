@@ -11,6 +11,7 @@ import (
 type Command interface {
 	help(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
 	menu(msg *tgbotapi.MessageConfig)
+	roll(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
 }
 
 func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
@@ -24,12 +25,14 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 
 	// Extract the command from the update.Message.
 	switch update.Message.Command() {
-	// case "help":
-	// 	handler.help(update, &msg)
-	// case "menu":
-	// 	handler.menu(&msg)
-	case "periodictable":
-		handler.periodic_table(update)
+	case "help":
+		handler.help(update, &msg)
+	case OPEN:
+		msg.Text = " 📜 Menu đã được thêm vào"
+		msg.ReplyMarkup = KeyboardButton
+	case CLOSE:
+		msg.Text = " ❌  Loại bỏ Menu"
+		msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	default:
 		msg.Text = "Tạm tời em không hiểu. Để em cập nhật thêm sau nhé!"
 	}
