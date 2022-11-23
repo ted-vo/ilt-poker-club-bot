@@ -13,12 +13,13 @@ import (
 
 const (
 	SHEET_PLAYERS_TILE = "players"
-	COL_ID             = 0
-	COL_NAME           = 1
-	COL_DEPOSIT        = 2
-	COL_WITHDRAW       = 3
-	COL_INCOME         = 4
-	COL_RANK           = 5
+
+	PLAYER_COL_ID       = 0
+	PLAYER_COL_NAME     = 1
+	PLAYER_COL_DEPOSIT  = 2
+	PLAYER_COL_WITHDRAW = 3
+	PLAYER_COL_INCOME   = 4
+	PLAYER_COL_RANK     = 5
 )
 
 type Player struct {
@@ -32,12 +33,12 @@ type Player struct {
 func getPlayer(rows [][]spreadsheet.Cell, playerId string) *Player {
 	for _, row := range rows {
 		if row[0].Value == playerId {
-			desposit, _ := strconv.ParseInt(row[COL_DEPOSIT].Value, 10, 64)
-			withdraw, _ := strconv.ParseInt(row[COL_DEPOSIT].Value, 10, 64)
-			income, _ := strconv.ParseInt(row[COL_DEPOSIT].Value, 10, 64)
+			desposit, _ := strconv.ParseInt(row[PLAYER_COL_DEPOSIT].Value, 10, 64)
+			withdraw, _ := strconv.ParseInt(row[PLAYER_COL_WITHDRAW].Value, 10, 64)
+			income, _ := strconv.ParseInt(row[PLAYER_COL_INCOME].Value, 10, 64)
 			return &Player{
-				Id:       row[COL_ID].Value,
-				Name:     row[COL_NAME].Value,
+				Id:       row[PLAYER_COL_ID].Value,
+				Name:     row[PLAYER_COL_NAME].Value,
 				Desposit: desposit,
 				Withdraw: withdraw,
 				Income:   income,
@@ -49,6 +50,8 @@ func getPlayer(rows [][]spreadsheet.Cell, playerId string) *Player {
 }
 
 func (handler *MessageHandler) getPlayerSheet() *spreadsheet.Sheet {
+	handler.SpreadsheetClub.Reload()
+
 	playerSheet, err := handler.SpreadsheetClub.Spreadsheet.SheetByTitle(SHEET_PLAYERS_TILE)
 	if err != nil {
 		log.Errorf("get players sheet error: %s", err.Error())
@@ -59,7 +62,7 @@ func (handler *MessageHandler) getPlayerSheet() *spreadsheet.Sheet {
 
 func (Handler *MessageHandler) getNewPlayerIndex(sheet *spreadsheet.Sheet) int {
 	for i, row := range sheet.Rows {
-		if len(row[COL_ID].Value) == 0 {
+		if len(row[PLAYER_COL_ID].Value) == 0 {
 			return i
 		}
 	}
@@ -82,13 +85,13 @@ func (handler *MessageHandler) registerPlayer(update *tgbotapi.Update, msg *tgbo
 	msg.ReplyToMessageID = update.Message.MessageID
 
 	if player := getPlayer(playerSheet.Rows, playerId); player != nil {
-		msg.Text = "Bạn đã đăng kí rồi. Không cần đăng kí lại!"
+		msg.Text = "Bạn đã đăng kí rồi. Không thể đăng kí lại!"
 		return
 	}
 
 	newRow := handler.getNewPlayerIndex(playerSheet)
-	playerSheet.Update(newRow, COL_ID, playerId)
-	playerSheet.Update(newRow, COL_NAME, fmt.Sprintf("%s", playerName))
+	playerSheet.Update(newRow, PLAYER_COL_ID, playerId)
+	playerSheet.Update(newRow, PLAYER_COL_NAME, fmt.Sprintf("%s", playerName))
 
 	handler.sheetSync(playerSheet)
 
@@ -124,4 +127,9 @@ func (handler *MessageHandler) profile(update *tgbotapi.Update, msg *tgbotapi.Me
 	msg.ReplyToMessageID = update.Message.MessageID
 	msg.ParseMode = pkg.HTLM
 	msg.Text = text
+
+	// check private chat caller
+	if update.Message.Chat.ID == update.Message.From.ID {
+		msg.ReplyMarkup = walletInlineKeyboard
+	}
 }

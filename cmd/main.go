@@ -48,6 +48,7 @@ func main() {
 				handler.Command(&update)
 			} else {
 				handler.Keyboard(&update)
+				handler.Transaction(&update)
 			}
 		} else if update.CallbackQuery != nil {
 			handler.InlineKeyboard(&update)

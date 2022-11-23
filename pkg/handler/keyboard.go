@@ -17,6 +17,8 @@ const (
 	OPEN           = "open"
 	CLOSE          = "close"
 	ROLL           = "🎲 Roll"
+	DEPOSIT        = "💸 Deposit"
+	WITHDRAW       = "💰 Withdraw"
 	PERIODIC_TABLE = "📖 Periodic Table"
 	PROFILE        = "👤 Profile"
 	LEADERBOARD    = "🏆 Leaderboard"

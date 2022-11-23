@@ -51,6 +51,15 @@ func (handler *MessageHandler) getCaller(update *tgbotapi.Update) string {
 	return caller
 }
 
+func (handler *MessageHandler) getQuerier(update *tgbotapi.Update) string {
+	querier := fmt.Sprintf("@%s", update.CallbackQuery.From.UserName)
+	if len(querier) < 5 {
+		querier = fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName)
+	}
+
+	return querier
+}
+
 func (handler *MessageHandler) menu(msg *tgbotapi.MessageConfig) {
 	msg.Text = " 🎲 Roll đi nào mấy con báo 🐆 "
 	msg.ReplyMarkup = &InlineKeyboard

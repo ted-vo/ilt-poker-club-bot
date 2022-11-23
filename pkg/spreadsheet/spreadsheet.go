@@ -43,3 +43,14 @@ func GetSheet() *SpreadsheetClub {
 		Spreadsheet: &spreadsheet,
 	}
 }
+
+func (spreadsheetClub *SpreadsheetClub) Reload() {
+	spreadsheet, err := spreadsheetClub.Service.FetchSpreadsheet(SPREADSHEET_ID)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	spreadsheetClub.Spreadsheet = &spreadsheet
+
+	log.Infof("get spreadsheet success. ID=%s", spreadsheet.ID)
+}

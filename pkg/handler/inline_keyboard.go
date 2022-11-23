@@ -16,6 +16,13 @@ var InlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
+var walletInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(DEPOSIT, "deposit"),
+		tgbotapi.NewInlineKeyboardButtonData(WITHDRAW, "withdraw"),
+	),
+)
+
 func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	// Respond to the callback query, telling Telegram to show the user
 	// a message with the data received.
@@ -24,7 +31,7 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 		panic(err)
 	}
 	// And finally, send a message containing the data received.
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 
 	switch update.CallbackQuery.Data {
 	case "roll":
@@ -35,12 +42,16 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 			roller = fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName)
 		}
 		msg.Text = fmt.Sprintf("%s rolled: %d", roller, rolled)
-	case "leaderboard":
-		msg.Text = "Feature in development"
+	case "deposit":
+		hanlder.deposit(update, &msg)
+	case "withdraw":
+		hanlder.withdraw(update, &msg)
 	}
 
-	if _, err := hanlder.bot.Send(msg); err != nil {
-		panic(err)
+	if len(msg.Text) != 0 {
+		if _, err := hanlder.bot.Send(msg); err != nil {
+			panic(err)
+		}
 	}
 
 	return nil
