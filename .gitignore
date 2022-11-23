@@ -4,3 +4,4 @@
 */.DS_Store
 build/*
 .env
+config/client_secret.json
