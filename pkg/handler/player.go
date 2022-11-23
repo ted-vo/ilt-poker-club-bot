@@ -57,6 +57,16 @@ func (handler *MessageHandler) getPlayerSheet() *spreadsheet.Sheet {
 	return playerSheet
 }
 
+func (Handler *MessageHandler) getNewPlayerIndex(sheet *spreadsheet.Sheet) int {
+	for i, row := range sheet.Rows {
+		if len(row[COL_ID].Value) == 0 {
+			return i
+		}
+	}
+
+	return 1
+}
+
 func (handler *MessageHandler) sheetSync(sheet *spreadsheet.Sheet) {
 	err := sheet.Synchronize()
 	if err != nil {
@@ -72,16 +82,13 @@ func (handler *MessageHandler) registerPlayer(update *tgbotapi.Update, msg *tgbo
 	msg.ReplyToMessageID = update.Message.MessageID
 
 	if player := getPlayer(playerSheet.Rows, playerId); player != nil {
-		msg.Text = "Bạn đã đăng kí rồi. Không thể đăng kí lại!"
+		msg.Text = "Bạn đã đăng kí rồi. Không cần đăng kí lại!"
 		return
 	}
 
-	newRow := len(playerSheet.Rows)
+	newRow := handler.getNewPlayerIndex(playerSheet)
 	playerSheet.Update(newRow, COL_ID, playerId)
 	playerSheet.Update(newRow, COL_NAME, fmt.Sprintf("%s", playerName))
-	playerSheet.Update(newRow, COL_DEPOSIT, "0")
-	playerSheet.Update(newRow, COL_WITHDRAW, "0")
-	playerSheet.Update(newRow, COL_INCOME, "0")
 
 	handler.sheetSync(playerSheet)
 
