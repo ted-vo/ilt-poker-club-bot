@@ -92,24 +92,6 @@ func (handler *MessageHandler) roll(update *tgbotapi.Update, msg *tgbotapi.Messa
 	handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 }
 
-func (handler *MessageHandler) profile(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
-	text, _ := pkg.Parse("./config/profile.html",
-		struct {
-			Name     string
-			Deposit  string
-			Withdraw string
-			Income   string
-		}{
-			Name:     handler.getCaller(update),
-			Deposit:  fmt.Sprintf("%d %s", 0, CURRENCY),
-			Withdraw: fmt.Sprintf("%d %s", 0, CURRENCY),
-			Income:   fmt.Sprintf("%d %s", 0, CURRENCY),
-		})
-	msg.ReplyToMessageID = update.Message.MessageID
-	msg.ParseMode = pkg.HTLM
-	msg.Text = text
-}
-
 func (handler *MessageHandler) periodic_table(update *tgbotapi.Update) {
 	bot := handler.bot
 	f, err := os.Open("./config/periodic_table.jpg")
