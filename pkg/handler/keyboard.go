@@ -12,6 +12,8 @@ import (
 
 const (
 	CURRENCY       = "💵"
+	START          = "start"
+	REGISTER       = "register"
 	OPEN           = "open"
 	CLOSE          = "close"
 	ROLL           = "🎲 Roll"

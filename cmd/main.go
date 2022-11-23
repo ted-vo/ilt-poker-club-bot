@@ -9,6 +9,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 	"github.com/ted-vo/ilt-poker-club-bot/pkg/handler"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg/spreadsheet"
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 	// Start polling Telegram for updates.
 	updates := bot.GetUpdatesChan(u)
 
-	handler := handler.New(bot)
+	handler := handler.New(bot, spreadsheet.GetSheet())
 
 	for update := range updates {
 		if update.Message != nil { // If we got a message

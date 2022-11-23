@@ -18,6 +18,11 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 
 	// Extract the command from the update.Message.
 	switch update.Message.Command() {
+	case START:
+		caller := handler.getCaller(update)
+		msg.Text = fmt.Sprintf("Xin chào báo thủ %s đến với ILT Poker Club!", caller)
+	case REGISTER:
+		handler.registerPlayer(update, &msg)
 	case OPEN:
 		msg.Text = " 📜 Menu đã được thêm vào"
 		msg.ReplyMarkup = KeyboardButton
