@@ -8,5 +8,5 @@ const (
 )
 
 func Rollem() int {
-	return rand.Intn(12) + 1
+	return rand.Intn(13) + 1
 }
