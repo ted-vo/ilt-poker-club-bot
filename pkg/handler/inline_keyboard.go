@@ -2,24 +2,61 @@ package handler
 
 import (
 	"fmt"
-	"math/rand"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 )
 
-var InlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-	// tgbotapi.NewInlineKeyboardRow(
-	// 	tgbotapi.NewInlineKeyboardButtonData("Leader Board", "leaderboard"),
-	// ),
+var rollMap = make(map[int]map[int64]*Roller)
+
+type Roller struct {
+	Username     string
+	Name         string
+	RolledNumber int
+}
+
+type RollType string
+
+const (
+	DAILY_ROLL      RollType = "🎲  Daily"
+	TOURNAMENT_ROLL RollType = "🥇 Tournament"
+
+	QUERY_DATA_DAILY_ROLL        = "daily_roll"
+	QUERY_DATA_DAILY_ROLL_FINISH = "daily_roll_finish"
+	QUERY_DATA_DAILY_ROLL_RESET  = "daily_roll_reset"
+
+	QUERY_DATA_TOUR_ROLL        = "tour_roll"
+	QUERY_DATA_TOUR_ROLL_FINISH = "tour_roll_finish"
+	QUERY_DATA_TOUR_ROLL_RESET  = "tour_roll_reset"
+
+	QUERY_DATA_DEPOSIT  = "deposit"
+	QUERY_DATA_WITHDRAW = "withdraw"
+)
+
+var rollDailyInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(" 🎰 Roll", "roll"),
+		tgbotapi.NewInlineKeyboardButtonData(ROLL, QUERY_DATA_DAILY_ROLL),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DATA_DAILY_ROLL_FINISH),
+		tgbotapi.NewInlineKeyboardButtonData(RESET, QUERY_DATA_DAILY_ROLL_RESET),
+	),
+)
+
+var rollTournamentInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(ROLL, QUERY_DATA_TOUR_ROLL),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DATA_TOUR_ROLL_FINISH),
+		tgbotapi.NewInlineKeyboardButtonData(RESET, QUERY_DATA_TOUR_ROLL_RESET),
 	),
 )
 
 var walletInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(DEPOSIT, "deposit"),
-		tgbotapi.NewInlineKeyboardButtonData(WITHDRAW, "withdraw"),
+		tgbotapi.NewInlineKeyboardButtonData(DEPOSIT, QUERY_DATA_DEPOSIT),
+		tgbotapi.NewInlineKeyboardButtonData(WITHDRAW, QUERY_DATA_WITHDRAW),
 	),
 )
 
@@ -34,17 +71,25 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 
 	switch update.CallbackQuery.Data {
-	case "roll":
-		fmt.Printf("%v", update.CallbackQuery.From)
-		rolled := rand.Intn(12) + 1
-		roller := fmt.Sprintf("@%s", update.CallbackQuery.From.UserName)
-		if len(roller) < 5 {
-			roller = fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName)
-		}
-		msg.Text = fmt.Sprintf("%s rolled: %d", roller, rolled)
-	case "deposit":
+	// Daily
+	case QUERY_DATA_DAILY_ROLL:
+		hanlder.roll_query(DAILY_ROLL, update, &msg)
+	case QUERY_DATA_DAILY_ROLL_FINISH:
+		hanlder.roll_query_finish(DAILY_ROLL, update, &msg)
+	case QUERY_DATA_DAILY_ROLL_RESET:
+		hanlder.roll_query_reset(DAILY_ROLL, update, &msg)
+
+		// Tournament
+	case QUERY_DATA_TOUR_ROLL:
+		hanlder.roll_query(TOURNAMENT_ROLL, update, &msg)
+	case QUERY_DATA_TOUR_ROLL_FINISH:
+		hanlder.roll_query_finish(TOURNAMENT_ROLL, update, &msg)
+	case QUERY_DATA_TOUR_ROLL_RESET:
+		hanlder.roll_query_reset(TOURNAMENT_ROLL, update, &msg)
+
+	case QUERY_DATA_DEPOSIT:
 		hanlder.deposit(update, &msg)
-	case "withdraw":
+	case QUERY_DATA_WITHDRAW:
 		hanlder.withdraw(update, &msg)
 	}
 
@@ -55,4 +100,106 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	}
 
 	return nil
+}
+
+func (handler *MessageHandler) roll_query(rollType RollType, update *tgbotapi.Update, msg *tgbotapi.MessageConfig) error {
+	chatId := update.CallbackQuery.Message.Chat.ID
+	messageId := update.CallbackQuery.Message.MessageID
+	rollerId := update.CallbackQuery.From.ID
+
+	groupRollMap := rollMap[messageId]
+	if groupRollMap == nil {
+		handler.removeMessage(chatId, messageId)
+		return nil
+	}
+
+	if roller := groupRollMap[rollerId]; roller != nil {
+		msg.Text = fmt.Sprintf("%s roll rồi thì ngồi im đi con báo này!", roller.showName())
+		return nil
+	}
+
+	groupRollMap[update.CallbackQuery.From.ID] = &Roller{
+		Username:     fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
+		Name:         fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName),
+		RolledNumber: pkg.Rollem(),
+	}
+
+	text := fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!\n\n", rollType)
+	var index = 0
+	for _, v := range groupRollMap {
+		text += fmt.Sprintf("%d. %s\n", index+1, v.parseRolledText())
+		index++
+	}
+
+	editMessage := tgbotapi.NewEditMessageTextAndMarkup(
+		chatId,
+		messageId,
+		text,
+		rollTournamentInlineKeyboard)
+	handler.bot.Send(editMessage)
+
+	return nil
+}
+
+func (handler *MessageHandler) roll_query_finish(rollType RollType, update *tgbotapi.Update, msg *tgbotapi.MessageConfig) error {
+	chatId := update.CallbackQuery.Message.Chat.ID
+	messageId := update.CallbackQuery.Message.MessageID
+
+	groupRollMap := rollMap[messageId]
+	if groupRollMap == nil {
+		handler.removeMessage(chatId, messageId)
+		return nil
+	}
+
+	text := fmt.Sprintf("[ %s ] Những con báo sau chuẩn bị tinh thần quay lô nào!\n\n", rollType)
+	var index = 0
+	for _, v := range groupRollMap {
+		text += fmt.Sprintf("%d. %s\n", index+1, v.parseRolledText())
+		index++
+	}
+
+	editMessage := tgbotapi.NewEditMessageText(
+		chatId,
+		messageId,
+		text,
+	)
+	handler.bot.Send(editMessage)
+
+	return nil
+}
+
+func (handler *MessageHandler) roll_query_reset(rollType RollType, update *tgbotapi.Update, msg *tgbotapi.MessageConfig) error {
+	chatId := update.CallbackQuery.Message.Chat.ID
+	messageId := update.CallbackQuery.Message.MessageID
+
+	groupRollMap := rollMap[messageId]
+	if groupRollMap == nil {
+		handler.removeMessage(chatId, messageId)
+		return nil
+	}
+
+	text := fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!\n\n", rollType)
+
+	editMessage := tgbotapi.NewEditMessageTextAndMarkup(
+		chatId,
+		messageId,
+		text,
+		rollTournamentInlineKeyboard,
+	)
+	handler.bot.Send(editMessage)
+
+	return nil
+}
+
+func (roller *Roller) showName() string {
+	showName := roller.Username
+	if len(showName) < 5 {
+		showName = roller.Name
+	}
+
+	return showName
+}
+
+func (roller *Roller) parseRolledText() string {
+	return fmt.Sprintf("%s rolled: %d", roller.showName(), roller.RolledNumber)
 }

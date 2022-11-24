@@ -81,7 +81,6 @@ func (handler *MessageHandler) Transaction(update *tgbotapi.Update) error {
 	playerId := fmt.Sprintf("%v", update.Message.From.ID)
 	transaction := queueRequestInput[playerId]
 	if transaction == nil {
-		log.Info("transaction not found")
 		return nil
 	}
 

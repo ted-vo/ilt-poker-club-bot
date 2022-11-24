@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 
 	"github.com/apex/log"
@@ -17,6 +16,9 @@ const (
 	OPEN           = "open"
 	CLOSE          = "close"
 	ROLL           = "🎲 Roll"
+	OPEN_TOUR      = "🥇 Open Tournament"
+	FINISH         = "🏁 Finish"
+	RESET          = "❌ Reset"
 	DEPOSIT        = "💸 Deposit"
 	WITHDRAW       = "💰 Withdraw"
 	PERIODIC_TABLE = "📖 Periodic Table"
@@ -29,24 +31,23 @@ const (
 var KeyboardButton = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(ROLL),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton(PERIODIC_TABLE),
+		tgbotapi.NewKeyboardButton(OPEN_TOUR),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(PROFILE),
 		tgbotapi.NewKeyboardButton(LEADERBOARD),
 	),
 	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(PERIODIC_TABLE),
 		tgbotapi.NewKeyboardButton(HELP),
-		tgbotapi.NewKeyboardButton(FEEDBACK),
+		// tgbotapi.NewKeyboardButton(FEEDBACK),
 	),
 )
 
 type Keyboard interface {
 	openKeyboard(msg *tgbotapi.MessageConfig)
 	closeKeyboard(msg *tgbotapi.MessageConfig)
-	roll(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
+	roll(update *tgbotapi.Update)
 	periodic_table(update *tgbotapi.Update)
 	profile(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
 	help(update *tgbotapi.Update, msg *tgbotapi.MessageConfig)
@@ -64,7 +65,9 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 	log.Debugf("%s", update.Message.Text)
 	switch update.Message.Text {
 	case ROLL:
-		handler.roll(update, &msg)
+		handler.roll(DAILY_ROLL, update)
+	case OPEN_TOUR:
+		handler.roll(TOURNAMENT_ROLL, update)
 	case PERIODIC_TABLE:
 		handler.periodic_table(update)
 	case PROFILE:
@@ -82,15 +85,23 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 	return nil
 }
 
-func (handler *MessageHandler) roll(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
-	rolled := rand.Intn(12) + 1
-	roller := fmt.Sprintf("@%s", update.Message.From.UserName)
-	if len(roller) < 5 {
-		roller = fmt.Sprintf("%s %s", update.Message.From.FirstName, update.Message.From.LastName)
-	}
-	msg.Text = fmt.Sprintf("%s rolled: %d", roller, rolled)
+func (handler *MessageHandler) roll(rollType RollType, update *tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 
-	// Remove request after rolled
+	if !update.Message.Chat.IsGroup() {
+		msg.Text = "This feature only for group!"
+		handler.send(&msg)
+		return
+	}
+
+	msg.ReplyMarkup = rollTournamentInlineKeyboard
+	msg.Text = fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!", rollType)
+
+	msgRes := handler.send(&msg)
+
+	// init map for this messageID open tour with keyboard markup
+	rollMap[msgRes.MessageID] = make(map[int64]*Roller)
+
 	handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 }
 

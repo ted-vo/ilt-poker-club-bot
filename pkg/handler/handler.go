@@ -18,8 +18,10 @@ type MessageHandler struct {
 	SpreadsheetClub *spreadsheet.SpreadsheetClub
 }
 
-func (handler *MessageHandler) send(msg *tgbotapi.MessageConfig) {
-	if _, err := handler.bot.Send(msg); err != nil {
+func (handler *MessageHandler) send(msg *tgbotapi.MessageConfig) *tgbotapi.Message {
+	msgRes, err := handler.bot.Send(msg)
+	if err != nil {
 		log.Error(err.Error())
 	}
+	return &msgRes
 }

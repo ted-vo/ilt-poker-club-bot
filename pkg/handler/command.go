@@ -59,8 +59,3 @@ func (handler *MessageHandler) getQuerier(update *tgbotapi.Update) string {
 
 	return querier
 }
-
-func (handler *MessageHandler) menu(msg *tgbotapi.MessageConfig) {
-	msg.Text = " 🎲 Roll đi nào mấy con báo 🐆 "
-	msg.ReplyMarkup = &InlineKeyboard
-}
