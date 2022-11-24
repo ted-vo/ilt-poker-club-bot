@@ -88,7 +88,7 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 func (handler *MessageHandler) roll(rollType RollType, update *tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 
-	if !update.Message.Chat.IsGroup() {
+	if update.Message.Chat.IsPrivate() || update.Message.Chat.IsChannel() {
 		msg.Text = "This feature only for group!"
 		handler.send(&msg)
 		return
