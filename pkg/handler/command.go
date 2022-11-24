@@ -26,9 +26,13 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 	case OPEN:
 		msg.Text = " 📜 Menu đã được thêm vào"
 		msg.ReplyMarkup = KeyboardButton
+
+		handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 	case CLOSE:
 		msg.Text = " ❌  Loại bỏ Menu"
 		msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+
+		handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 	default:
 		msg.Text = "Tạm tời em không hiểu. Để em cập nhật thêm sau nhé!"
 	}
