@@ -3,16 +3,20 @@ package handler
 import (
 	"fmt"
 
+	"github.com/apex/log"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/ted-vo/ilt-poker-club-bot/pkg"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg/deck"
 )
 
 var rollMap = make(map[int]map[int64]*Roller)
+var deckMap = make(map[int]*deck.Deck)
 
 type Roller struct {
 	Username     string
 	Name         string
 	RolledNumber int
+	DrawedCard   *deck.Card
 }
 
 type RollType string
@@ -53,6 +57,12 @@ var rollTournamentInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
+var drawCardKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🃏 Draw a card", "draw_a_card"),
+	),
+)
+
 var walletInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(DEPOSIT, QUERY_DATA_DEPOSIT),
@@ -71,6 +81,8 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 
 	switch update.CallbackQuery.Data {
+	case "draw_a_card":
+		hanlder.draw_card_query(update, &msg)
 	// Daily
 	case QUERY_DATA_DAILY_ROLL:
 		hanlder.roll_query(DAILY_ROLL, update, &msg)
@@ -102,6 +114,56 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	return nil
 }
 
+func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+	chatId := update.CallbackQuery.Message.Chat.ID
+	messageId := update.CallbackQuery.Message.MessageID
+	rollerId := update.CallbackQuery.From.ID
+
+	groupRollMap := rollMap[messageId]
+	if groupRollMap == nil {
+		handler.removeMessage(chatId, messageId)
+		return
+	}
+
+	deck := deckMap[messageId]
+	if deck == nil {
+		handler.removeMessage(chatId, messageId)
+		return
+	}
+
+	if roller := groupRollMap[rollerId]; roller != nil {
+		msg.Text = fmt.Sprintf("%s roll rồi thì ngồi im đi con báo này!", roller.showName())
+		return
+	}
+
+	card, err := deck.Pop()
+	if err != nil {
+		log.Error(err.Error())
+	}
+	groupRollMap[update.CallbackQuery.From.ID] = &Roller{
+		Username:   fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
+		Name:       fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName),
+		DrawedCard: card,
+	}
+
+	text := fmt.Sprintf("Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n")
+	var index = 0
+	for _, v := range groupRollMap {
+		text += fmt.Sprintf("%d. %s\n", index+1, v.parseDrawedText())
+		index++
+	}
+
+	editMessage := tgbotapi.NewEditMessageTextAndMarkup(
+		chatId,
+		messageId,
+		text,
+		drawCardKeyboard)
+	handler.bot.Send(editMessage)
+
+	return
+
+}
+
 func (handler *MessageHandler) roll_query(rollType RollType, update *tgbotapi.Update, msg *tgbotapi.MessageConfig) error {
 	chatId := update.CallbackQuery.Message.Chat.ID
 	messageId := update.CallbackQuery.Message.MessageID
@@ -131,11 +193,18 @@ func (handler *MessageHandler) roll_query(rollType RollType, update *tgbotapi.Up
 		index++
 	}
 
+	var inlineKeyboard tgbotapi.InlineKeyboardMarkup
+	if rollType == DAILY_ROLL {
+		inlineKeyboard = rollDailyInlineKeyboard
+	} else {
+		inlineKeyboard = rollTournamentInlineKeyboard
+	}
+
 	editMessage := tgbotapi.NewEditMessageTextAndMarkup(
 		chatId,
 		messageId,
 		text,
-		rollTournamentInlineKeyboard)
+		inlineKeyboard)
 	handler.bot.Send(editMessage)
 
 	return nil
@@ -202,4 +271,8 @@ func (roller *Roller) showName() string {
 
 func (roller *Roller) parseRolledText() string {
 	return fmt.Sprintf("%s rolled: %d", roller.showName(), roller.RolledNumber)
+}
+
+func (roller *Roller) parseDrawedText() string {
+	return fmt.Sprintf("%s drawed: %s", roller.showName(), roller.DrawedCard.ToString())
 }

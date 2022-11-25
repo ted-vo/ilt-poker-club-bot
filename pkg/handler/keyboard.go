@@ -7,6 +7,7 @@ import (
 	"github.com/apex/log"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/ted-vo/ilt-poker-club-bot/pkg"
+	"github.com/ted-vo/ilt-poker-club-bot/pkg/deck"
 )
 
 const (
@@ -16,7 +17,8 @@ const (
 	OPEN           = "open"
 	CLOSE          = "close"
 	ROLL           = "🎲 Roll"
-	OPEN_TOUR      = "🥇 Open Tournament"
+	OPEN_DAILY     = "🎲 Open Daily Roll"
+	OPEN_TOUR      = "🥇 Open Tournament Roll"
 	FINISH         = "🏁 Finish"
 	RESET          = "❌ Reset"
 	DEPOSIT        = "💸 Deposit"
@@ -29,8 +31,11 @@ const (
 )
 
 var KeyboardButton = tgbotapi.NewReplyKeyboard(
+	// tgbotapi.NewKeyboardButtonRow(
+	// 	tgbotapi.NewKeyboardButton("draw_a_card"),
+	// ),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton(ROLL),
+		tgbotapi.NewKeyboardButton(OPEN_DAILY),
 		tgbotapi.NewKeyboardButton(OPEN_TOUR),
 	),
 	tgbotapi.NewKeyboardButtonRow(
@@ -64,6 +69,21 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 
 	log.Debugf("%s", update.Message.Text)
 	switch update.Message.Text {
+	case "draw_a_card":
+		lastDeck := deckMap[1]
+		if lastDeck == nil {
+			lastDeck := deck.NewDeck()
+			lastDeck.Shuffle()
+			msg.Text = "Open Deck and Shuffle"
+			deckMap[1] = lastDeck
+		} else {
+			card, err := lastDeck.Pop()
+			if err != nil {
+				log.Error(err.Error())
+			}
+			msg.Text = fmt.Sprintf("%s drawed: %s", handler.getCaller(update), card.ToString())
+		}
+		handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 	case ROLL:
 		handler.roll(DAILY_ROLL, update)
 	case OPEN_TOUR:
@@ -94,11 +114,26 @@ func (handler *MessageHandler) roll(rollType RollType, update *tgbotapi.Update) 
 		return
 	}
 
-	msg.ReplyMarkup = rollTournamentInlineKeyboard
+	var inlineKeyboard tgbotapi.InlineKeyboardMarkup
+	switch rollType {
+	case DAILY_ROLL:
+		inlineKeyboard = rollDailyInlineKeyboard
+	case TOURNAMENT_ROLL:
+		inlineKeyboard = rollTournamentInlineKeyboard
+	case "draw_a_card":
+		inlineKeyboard = drawCardKeyboard
+	}
+
+	msg.ReplyMarkup = inlineKeyboard
 	msg.Text = fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!", rollType)
 
 	msgRes := handler.send(&msg)
 
+	if rollType == "draw_a_card" {
+		deck := deck.NewDeck()
+		deck.Shuffle()
+		deckMap[msgRes.MessageID] = deck
+	}
 	// init map for this messageID open tour with keyboard markup
 	rollMap[msgRes.MessageID] = make(map[int64]*Roller)
 
