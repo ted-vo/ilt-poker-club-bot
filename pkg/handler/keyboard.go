@@ -84,7 +84,7 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 			msg.Text = fmt.Sprintf("%s drawed: %s", handler.getCaller(update), card.ToString())
 		}
 		handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
-	case ROLL:
+	case OPEN_DAILY:
 		handler.roll(DAILY_ROLL, update)
 	case OPEN_TOUR:
 		handler.roll(TOURNAMENT_ROLL, update)
