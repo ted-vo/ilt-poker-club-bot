@@ -92,6 +92,8 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 		handler.periodic_table(update)
 	case PROFILE:
 		handler.profile(update, &msg)
+	case LEADERBOARD:
+		handler.leaderBoard(update, &msg)
 	case HELP:
 		handler.help(update, &msg)
 	}

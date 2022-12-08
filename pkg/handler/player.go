@@ -1,14 +1,16 @@
 package handler
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/apex/log"
+	"github.com/aquasecurity/table"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/ted-vo/ilt-poker-club-bot/pkg"
 	"gopkg.in/Iwark/spreadsheet.v2"
-	// "gopkg.in/Iwark/spreadsheet.v2"
 )
 
 const (
@@ -25,9 +27,10 @@ const (
 type Player struct {
 	Id       string
 	Name     string
-	Desposit int64
+	Deposit  int64
 	Withdraw int64
 	Income   int64
+	Rank     uint64
 }
 
 func getPlayer(rows [][]spreadsheet.Cell, playerId string) *Player {
@@ -36,17 +39,44 @@ func getPlayer(rows [][]spreadsheet.Cell, playerId string) *Player {
 			desposit, _ := strconv.ParseInt(row[PLAYER_COL_DEPOSIT].Value, 10, 64)
 			withdraw, _ := strconv.ParseInt(row[PLAYER_COL_WITHDRAW].Value, 10, 64)
 			income, _ := strconv.ParseInt(row[PLAYER_COL_INCOME].Value, 10, 64)
+			rank, _ := strconv.ParseUint(row[PLAYER_COL_RANK].Value, 10, 64)
 			return &Player{
 				Id:       row[PLAYER_COL_ID].Value,
 				Name:     row[PLAYER_COL_NAME].Value,
-				Desposit: desposit,
+				Deposit:  desposit,
 				Withdraw: withdraw,
 				Income:   income,
+				Rank:     rank,
 			}
 		}
 	}
 
 	return nil
+}
+
+func getPlayers(rows [][]spreadsheet.Cell) []*Player {
+	var players = make([]*Player, 0)
+	for _, row := range rows {
+		if row[PLAYER_COL_ID].Value == "id" {
+			continue
+		}
+
+		desposit, _ := strconv.ParseInt(row[PLAYER_COL_DEPOSIT].Value, 10, 64)
+		withdraw, _ := strconv.ParseInt(row[PLAYER_COL_WITHDRAW].Value, 10, 64)
+		income, _ := strconv.ParseInt(row[PLAYER_COL_INCOME].Value, 10, 64)
+		rank, _ := strconv.ParseUint(row[PLAYER_COL_RANK].Value, 10, 64)
+
+		players = append(players, &Player{
+			Id:       row[PLAYER_COL_ID].Value,
+			Name:     row[PLAYER_COL_NAME].Value,
+			Deposit:  desposit,
+			Withdraw: withdraw,
+			Income:   income,
+			Rank:     rank,
+		})
+	}
+
+	return players
 }
 
 func (handler *MessageHandler) getPlayerSheet() *spreadsheet.Sheet {
@@ -58,16 +88,6 @@ func (handler *MessageHandler) getPlayerSheet() *spreadsheet.Sheet {
 	}
 
 	return playerSheet
-}
-
-func (Handler *MessageHandler) getNewPlayerIndex(sheet *spreadsheet.Sheet) int {
-	for i, row := range sheet.Rows {
-		if len(row[PLAYER_COL_ID].Value) == 0 {
-			return i
-		}
-	}
-
-	return 1
 }
 
 func (handler *MessageHandler) sheetSync(sheet *spreadsheet.Sheet) {
@@ -89,7 +109,7 @@ func (handler *MessageHandler) registerPlayer(update *tgbotapi.Update, msg *tgbo
 		return
 	}
 
-	newRow := handler.getNewPlayerIndex(playerSheet)
+	newRow := len(playerSheet.Rows)
 	playerSheet.Update(newRow, PLAYER_COL_ID, playerId)
 	playerSheet.Update(newRow, PLAYER_COL_NAME, fmt.Sprintf("%s", playerName))
 
@@ -112,24 +132,38 @@ func (handler *MessageHandler) profile(update *tgbotapi.Update, msg *tgbotapi.Me
 		return
 	}
 
-	text, _ := pkg.Parse("./config/profile.html",
-		struct {
-			Name     string
-			Deposit  string
-			Withdraw string
-			Income   string
-		}{
-			Name:     handler.getCaller(update),
-			Deposit:  fmt.Sprintf("%d %s", player.Desposit, CURRENCY),
-			Withdraw: fmt.Sprintf("%d %s", player.Withdraw, CURRENCY),
-			Income:   fmt.Sprintf("%d %s", player.Income, CURRENCY),
-		})
+	player.Name = handler.getCaller(update)
+	text, _ := pkg.Parse("./config/profile.html", player)
 	msg.ReplyToMessageID = update.Message.MessageID
 	msg.ParseMode = pkg.HTLM
 	msg.Text = text
 
 	// check private chat caller
-	if update.Message.Chat.ID == update.Message.From.ID {
+	if update.Message.Chat.IsPrivate() {
 		msg.ReplyMarkup = walletInlineKeyboard
 	}
+}
+
+func (handler *MessageHandler) leaderBoard(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+	playerSheet := handler.getPlayerSheet()
+	players := getPlayers(playerSheet.Rows)
+	sort.Slice(players, func(i, j int) bool {
+		return players[i].Income > players[j].Income
+	})
+
+	buf := new(bytes.Buffer)
+	t := table.New(buf)
+	t.SetHeaders("Rank", "Name", "Income")
+
+	for _, v := range players {
+		t.AddRow(fmt.Sprintf("%d", v.Rank), v.Name, fmt.Sprintf("%d", v.Income))
+	}
+	t.Render()
+	data := buf.String()
+
+	text, _ := pkg.Parse("./config/leaderboard.html", struct{ Data string }{Data: data})
+	msg.ParseMode = pkg.HTLM
+	msg.Text = text
+
+	handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 }
