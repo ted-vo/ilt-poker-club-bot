@@ -4,13 +4,13 @@ go 1.18
 
 require (
 	github.com/apex/log v1.9.0
+	github.com/aquasecurity/table v1.8.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	golang.org/x/oauth2 v0.2.0
 	gopkg.in/Iwark/spreadsheet.v2 v2.0.0-20220412131121-41eea1483964
 )
 
 require (
-	github.com/aquasecurity/table v1.8.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
