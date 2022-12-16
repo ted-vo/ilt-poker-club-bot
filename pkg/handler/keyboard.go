@@ -38,13 +38,9 @@ var KeyboardButton = tgbotapi.NewReplyKeyboard(
 )
 
 var KeyboardPrivateButton = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("draw_a_card"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton(OPEN_DAILY),
-		tgbotapi.NewKeyboardButton(OPEN_TOUR),
-	),
+	// tgbotapi.NewKeyboardButtonRow(
+	// 	tgbotapi.NewKeyboardButton("draw_a_card"),
+	// ),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(PROFILE),
 	),
