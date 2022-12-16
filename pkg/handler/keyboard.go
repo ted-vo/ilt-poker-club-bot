@@ -38,9 +38,6 @@ var KeyboardButton = tgbotapi.NewReplyKeyboard(
 )
 
 var KeyboardPrivateButton = tgbotapi.NewReplyKeyboard(
-	// tgbotapi.NewKeyboardButtonRow(
-	// 	tgbotapi.NewKeyboardButton("draw_a_card"),
-	// ),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(PROFILE),
 	),
@@ -71,20 +68,20 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 	log.Debugf("%s", update.Message.Text)
 	switch update.Message.Text {
 	case "draw_a_card":
-		lastDeck := deckMap[1]
-		if lastDeck == nil {
-			lastDeck := deck.NewDeck()
-			lastDeck.Shuffle()
-			msg.Text = "Open Deck and Shuffle"
-			deckMap[1] = lastDeck
-		} else {
-			card, err := lastDeck.Pop()
-			if err != nil {
-				log.Error(err.Error())
-			}
-			msg.Text = fmt.Sprintf("%s drawed: %s", handler.getCaller(update), card.ToString())
-		}
-		handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
+		// lastDeck := deckMap[1]
+		// if lastDeck == nil {
+		// 	lastDeck := deck.NewDeck()
+		// 	lastDeck.Shuffle()
+		// 	msg.Text = "Open Deck and Shuffle"
+		// 	deckMap[1] = lastDeck
+		// } else {
+		// 	card, err := lastDeck.Pop()
+		// 	if err != nil {
+		// 		log.Error(err.Error())
+		// 	}
+		// 	msg.Text = fmt.Sprintf("%s drawed: %s", handler.getCaller(update), card.ToString())
+		// }
+		// handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 	case OPEN_DAILY:
 		handler.roll(DAILY_ROLL, update)
 	case OPEN_TOUR:
