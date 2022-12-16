@@ -25,7 +25,12 @@ func (handler *MessageHandler) Command(update *tgbotapi.Update) error {
 		handler.registerPlayer(update, &msg)
 	case OPEN:
 		msg.Text = " 📜 Menu đã được thêm vào"
-		msg.ReplyMarkup = KeyboardButton
+
+		if update.Message.Chat.IsPrivate() {
+			msg.ReplyMarkup = KeyboardPrivateButton
+		} else {
+			msg.ReplyMarkup = KeyboardButton
+		}
 
 		handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
 	case CLOSE:

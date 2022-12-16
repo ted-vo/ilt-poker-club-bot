@@ -31,21 +31,26 @@ const (
 )
 
 var KeyboardButton = tgbotapi.NewReplyKeyboard(
-	// tgbotapi.NewKeyboardButtonRow(
-	// 	tgbotapi.NewKeyboardButton("draw_a_card"),
-	// ),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(OPEN_DAILY),
+		tgbotapi.NewKeyboardButton(OPEN_TOUR),
+	),
+)
+
+var KeyboardPrivateButton = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("draw_a_card"),
+	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(OPEN_DAILY),
 		tgbotapi.NewKeyboardButton(OPEN_TOUR),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(PROFILE),
-		tgbotapi.NewKeyboardButton(LEADERBOARD),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(PERIODIC_TABLE),
 		tgbotapi.NewKeyboardButton(HELP),
-		// tgbotapi.NewKeyboardButton(FEEDBACK),
 	),
 )
 
@@ -93,7 +98,7 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 	case PROFILE:
 		handler.profile(update, &msg)
 	case LEADERBOARD:
-		handler.leaderBoard(update, &msg)
+		// handler.leaderBoard(update, &msg)
 	case HELP:
 		handler.help(update, &msg)
 	}
