@@ -126,7 +126,7 @@ func (handler *MessageHandler) addTransaction(trasaction *Trasaction, msg *tgbot
 	}
 	msg.ParseMode = pkg.HTLM
 	msg.Text = text
-	msg.ReplyMarkup = KeyboardButton
+	msg.ReplyMarkup = KeyboardPrivateButton
 
 	handler.send(msg)
 }

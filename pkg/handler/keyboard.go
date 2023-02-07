@@ -28,12 +28,16 @@ const (
 	LEADERBOARD    = "🏆 Leaderboard"
 	HELP           = "❓ Help"
 	FEEDBACK       = "💡 Feedback"
+
+	OPEN_DECK   = "🃏 Open Deck"
+	DRAW_A_CARD = "🃏 Draw a card"
 )
 
 var KeyboardButton = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(OPEN_DAILY),
 		tgbotapi.NewKeyboardButton(OPEN_TOUR),
+		tgbotapi.NewKeyboardButton(OPEN_DECK),
 	),
 )
 
@@ -67,21 +71,8 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 
 	log.Debugf("%s", update.Message.Text)
 	switch update.Message.Text {
-	case "draw_a_card":
-		// lastDeck := deckMap[1]
-		// if lastDeck == nil {
-		// 	lastDeck := deck.NewDeck()
-		// 	lastDeck.Shuffle()
-		// 	msg.Text = "Open Deck and Shuffle"
-		// 	deckMap[1] = lastDeck
-		// } else {
-		// 	card, err := lastDeck.Pop()
-		// 	if err != nil {
-		// 		log.Error(err.Error())
-		// 	}
-		// 	msg.Text = fmt.Sprintf("%s drawed: %s", handler.getCaller(update), card.ToString())
-		// }
-		// handler.removeMessage(update.Message.Chat.ID, update.Message.MessageID)
+	case OPEN_DECK:
+		handler.roll(DECK_ROLL, update)
 	case OPEN_DAILY:
 		handler.roll(DAILY_ROLL, update)
 	case OPEN_TOUR:
@@ -120,16 +111,21 @@ func (handler *MessageHandler) roll(rollType RollType, update *tgbotapi.Update) 
 		inlineKeyboard = rollDailyInlineKeyboard
 	case TOURNAMENT_ROLL:
 		inlineKeyboard = rollTournamentInlineKeyboard
-	case "draw_a_card":
+	case DECK_ROLL:
 		inlineKeyboard = drawCardKeyboard
 	}
 
 	msg.ReplyMarkup = inlineKeyboard
-	msg.Text = fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!", rollType)
+
+	if rollType == DECK_ROLL {
+		msg.Text = fmt.Sprint("Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n")
+	} else {
+		msg.Text = fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!", rollType)
+	}
 
 	msgRes := handler.send(&msg)
 
-	if rollType == "draw_a_card" {
+	if rollType == DECK_ROLL {
 		deck := deck.NewDeck()
 		deck.Shuffle()
 		deckMap[msgRes.MessageID] = deck

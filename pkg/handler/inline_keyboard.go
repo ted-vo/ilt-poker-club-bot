@@ -17,13 +17,15 @@ type Roller struct {
 	Name         string
 	RolledNumber int
 	DrawedCard   *deck.Card
+	Index        int
 }
 
 type RollType string
 
 const (
-	DAILY_ROLL      RollType = "🎲  Daily"
+	DAILY_ROLL      RollType = "🎲 Daily"
 	TOURNAMENT_ROLL RollType = "🥇 Tournament"
+	DECK_ROLL       RollType = "🃏 Deck Draw"
 
 	QUERY_DATA_DAILY_ROLL        = "daily_roll"
 	QUERY_DATA_DAILY_ROLL_FINISH = "daily_roll_finish"
@@ -32,6 +34,9 @@ const (
 	QUERY_DATA_TOUR_ROLL        = "tour_roll"
 	QUERY_DATA_TOUR_ROLL_FINISH = "tour_roll_finish"
 	QUERY_DATA_TOUR_ROLL_RESET  = "tour_roll_reset"
+
+	QUERY_DRAW_A_CARD      = "draw_a_card"
+	QUERY_DRAW_DECK_FINISH = "draw_deck_finish"
 
 	QUERY_DATA_DEPOSIT  = "deposit"
 	QUERY_DATA_WITHDRAW = "withdraw"
@@ -43,7 +48,7 @@ var rollDailyInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DATA_DAILY_ROLL_FINISH),
-		tgbotapi.NewInlineKeyboardButtonData(RESET, QUERY_DATA_DAILY_ROLL_RESET),
+		// tgbotapi.NewInlineKeyboardButtonData(RESET, QUERY_DATA_DAILY_ROLL_RESET),
 	),
 )
 
@@ -53,13 +58,15 @@ var rollTournamentInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DATA_TOUR_ROLL_FINISH),
-		tgbotapi.NewInlineKeyboardButtonData(RESET, QUERY_DATA_TOUR_ROLL_RESET),
 	),
 )
 
 var drawCardKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🃏 Draw a card", "draw_a_card"),
+		tgbotapi.NewInlineKeyboardButtonData(DRAW_A_CARD, QUERY_DRAW_A_CARD),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DRAW_DECK_FINISH),
 	),
 )
 
@@ -81,8 +88,11 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 
 	switch update.CallbackQuery.Data {
-	case "draw_a_card":
+	case QUERY_DRAW_A_CARD:
 		hanlder.draw_card_query(update, &msg)
+	case QUERY_DRAW_DECK_FINISH:
+		hanlder.draw_card_query_finish(update, &msg)
+
 	// Daily
 	case QUERY_DATA_DAILY_ROLL:
 		hanlder.roll_query(DAILY_ROLL, update, &msg)
@@ -91,7 +101,7 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	case QUERY_DATA_DAILY_ROLL_RESET:
 		hanlder.roll_query_reset(DAILY_ROLL, update, &msg)
 
-		// Tournament
+	// Tournament
 	case QUERY_DATA_TOUR_ROLL:
 		hanlder.roll_query(TOURNAMENT_ROLL, update, &msg)
 	case QUERY_DATA_TOUR_ROLL_FINISH:
@@ -99,6 +109,7 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	case QUERY_DATA_TOUR_ROLL_RESET:
 		hanlder.roll_query_reset(TOURNAMENT_ROLL, update, &msg)
 
+	// Trasaction
 	case QUERY_DATA_DEPOSIT:
 		hanlder.deposit(update, &msg)
 	case QUERY_DATA_WITHDRAW:
@@ -132,7 +143,7 @@ func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgb
 	}
 
 	if roller := groupRollMap[rollerId]; roller != nil {
-		msg.Text = fmt.Sprintf("%s roll rồi thì ngồi im đi con báo này!", roller.showName())
+		msg.Text = fmt.Sprintf("%s rút rồi thì ngồi im đi con báo này!", roller.showName())
 		return
 	}
 
@@ -144,13 +155,12 @@ func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgb
 		Username:   fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
 		Name:       fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName),
 		DrawedCard: card,
+		Index:      52 - deck.Size(),
 	}
 
-	text := fmt.Sprintf("Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n")
-	var index = 0
+	text := fmt.Sprint("Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n")
 	for _, v := range groupRollMap {
-		text += fmt.Sprintf("%d. %s\n", index+1, v.parseDrawedText())
-		index++
+		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseDrawedText())
 	}
 
 	editMessage := tgbotapi.NewEditMessageTextAndMarkup(
@@ -161,7 +171,43 @@ func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgb
 	handler.bot.Send(editMessage)
 
 	return
+}
 
+func (handler *MessageHandler) draw_card_query_finish(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+	chatId := update.CallbackQuery.Message.Chat.ID
+	messageId := update.CallbackQuery.Message.MessageID
+
+	groupRollMap := rollMap[messageId]
+	if groupRollMap == nil {
+		handler.removeMessage(chatId, messageId)
+		return
+	}
+
+	deck := deckMap[messageId]
+	if deck == nil {
+		handler.removeMessage(chatId, messageId)
+		return
+	}
+
+	text := fmt.Sprintf(
+		"[ Deck Draw ] Finished by %s \n\n",
+		fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
+	)
+	for _, v := range groupRollMap {
+		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseDrawedText())
+	}
+
+	editMessage := tgbotapi.NewEditMessageText(
+		chatId,
+		messageId,
+		text,
+	)
+	handler.bot.Send(editMessage)
+
+	// remove deck
+	deckMap[messageId] = nil
+
+	return
 }
 
 func (handler *MessageHandler) roll_query(rollType RollType, update *tgbotapi.Update, msg *tgbotapi.MessageConfig) error {
@@ -184,13 +230,12 @@ func (handler *MessageHandler) roll_query(rollType RollType, update *tgbotapi.Up
 		Username:     fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
 		Name:         fmt.Sprintf("%s %s", update.CallbackQuery.From.FirstName, update.CallbackQuery.From.LastName),
 		RolledNumber: pkg.Rollem(),
+		Index:        len(groupRollMap) + 1,
 	}
 
 	text := fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!\n\n", rollType)
-	var index = 0
 	for _, v := range groupRollMap {
-		text += fmt.Sprintf("%d. %s\n", index+1, v.parseRolledText())
-		index++
+		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseRolledText())
 	}
 
 	var inlineKeyboard tgbotapi.InlineKeyboardMarkup
@@ -221,11 +266,11 @@ func (handler *MessageHandler) roll_query_finish(rollType RollType, update *tgbo
 	}
 
 	text := fmt.Sprintf("[ %s ] Những con báo sau chuẩn bị tinh thần quay lô nào!\n\n", rollType)
-	var index = 0
 	for _, v := range groupRollMap {
-		text += fmt.Sprintf("%d. %s\n", index+1, v.parseRolledText())
-		index++
+		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseRolledText())
 	}
+
+	text += fmt.Sprintf("\n\nFinished by %s", fmt.Sprintf("@%s", update.CallbackQuery.From.UserName))
 
 	editMessage := tgbotapi.NewEditMessageText(
 		chatId,

@@ -14,7 +14,7 @@ import (
 
 func main() {
 	log.SetHandler(pkg.NewLogHandler())
-	go startHTTPServer()
+	// go startHTTPServer()
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TOKEN"))
 	if err != nil {
