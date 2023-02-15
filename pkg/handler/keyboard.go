@@ -37,7 +37,7 @@ var KeyboardButton = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(OPEN_DAILY),
 		tgbotapi.NewKeyboardButton(OPEN_TOUR),
-		tgbotapi.NewKeyboardButton(OPEN_DECK),
+		// tgbotapi.NewKeyboardButton(OPEN_DECK),
 	),
 )
 
@@ -71,8 +71,6 @@ func (handler *MessageHandler) Keyboard(update *tgbotapi.Update) error {
 
 	log.Debugf("%s", update.Message.Text)
 	switch update.Message.Text {
-	case OPEN_DECK:
-		handler.roll(DECK_ROLL, update)
 	case OPEN_DAILY:
 		handler.roll(DAILY_ROLL, update)
 	case OPEN_TOUR:
@@ -111,25 +109,18 @@ func (handler *MessageHandler) roll(rollType RollType, update *tgbotapi.Update) 
 		inlineKeyboard = rollDailyInlineKeyboard
 	case TOURNAMENT_ROLL:
 		inlineKeyboard = rollTournamentInlineKeyboard
-	case DECK_ROLL:
+	default:
 		inlineKeyboard = drawCardKeyboard
 	}
-
 	msg.ReplyMarkup = inlineKeyboard
-
-	if rollType == DECK_ROLL {
-		msg.Text = fmt.Sprint("Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n")
-	} else {
-		msg.Text = fmt.Sprintf("[ %s ] Ghi danh nào mấy con báo!", rollType)
-	}
+	msg.Text = fmt.Sprintf("[ %s ] Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n", rollType)
 
 	msgRes := handler.send(&msg)
 
-	if rollType == DECK_ROLL {
-		deck := deck.NewDeck()
-		deck.Shuffle()
-		deckMap[msgRes.MessageID] = deck
-	}
+	deck := deck.NewDeck()
+	deck.Shuffle()
+	deckMap[msgRes.MessageID] = deck
+
 	// init map for this messageID open tour with keyboard markup
 	rollMap[msgRes.MessageID] = make(map[int64]*Roller)
 

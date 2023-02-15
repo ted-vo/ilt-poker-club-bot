@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/apex/log"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -25,7 +26,6 @@ type RollType string
 const (
 	DAILY_ROLL      RollType = "🎲 Daily"
 	TOURNAMENT_ROLL RollType = "🥇 Tournament"
-	DECK_ROLL       RollType = "🃏 Deck Draw"
 
 	QUERY_DATA_DAILY_ROLL        = "daily_roll"
 	QUERY_DATA_DAILY_ROLL_FINISH = "daily_roll_finish"
@@ -44,7 +44,7 @@ const (
 
 var rollDailyInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(ROLL, QUERY_DATA_DAILY_ROLL),
+		tgbotapi.NewInlineKeyboardButtonData(DRAW_A_CARD, QUERY_DATA_DAILY_ROLL),
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DATA_DAILY_ROLL_FINISH),
@@ -54,7 +54,7 @@ var rollDailyInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 
 var rollTournamentInlineKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(ROLL, QUERY_DATA_TOUR_ROLL),
+		tgbotapi.NewInlineKeyboardButtonData(DRAW_A_CARD, QUERY_DATA_TOUR_ROLL),
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(FINISH, QUERY_DATA_TOUR_ROLL_FINISH),
@@ -88,26 +88,17 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 
 	switch update.CallbackQuery.Data {
-	case QUERY_DRAW_A_CARD:
-		hanlder.draw_card_query(update, &msg)
-	case QUERY_DRAW_DECK_FINISH:
-		hanlder.draw_card_query_finish(update, &msg)
-
 	// Daily
 	case QUERY_DATA_DAILY_ROLL:
-		hanlder.roll_query(DAILY_ROLL, update, &msg)
+		hanlder.draw_card_query(update, &msg, DAILY_ROLL)
 	case QUERY_DATA_DAILY_ROLL_FINISH:
-		hanlder.roll_query_finish(DAILY_ROLL, update, &msg)
-	case QUERY_DATA_DAILY_ROLL_RESET:
-		hanlder.roll_query_reset(DAILY_ROLL, update, &msg)
+		hanlder.draw_card_query_finish(update, &msg, DAILY_ROLL)
 
 	// Tournament
 	case QUERY_DATA_TOUR_ROLL:
-		hanlder.roll_query(TOURNAMENT_ROLL, update, &msg)
+		hanlder.draw_card_query(update, &msg, TOURNAMENT_ROLL)
 	case QUERY_DATA_TOUR_ROLL_FINISH:
-		hanlder.roll_query_finish(TOURNAMENT_ROLL, update, &msg)
-	case QUERY_DATA_TOUR_ROLL_RESET:
-		hanlder.roll_query_reset(TOURNAMENT_ROLL, update, &msg)
+		hanlder.draw_card_query_finish(update, &msg, TOURNAMENT_ROLL)
 
 	// Trasaction
 	case QUERY_DATA_DEPOSIT:
@@ -125,7 +116,7 @@ func (hanlder *MessageHandler) InlineKeyboard(update *tgbotapi.Update) error {
 	return nil
 }
 
-func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgbotapi.MessageConfig, rollType RollType) {
 	chatId := update.CallbackQuery.Message.Chat.ID
 	messageId := update.CallbackQuery.Message.MessageID
 	rollerId := update.CallbackQuery.From.ID
@@ -158,22 +149,38 @@ func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgb
 		Index:      52 - deck.Size(),
 	}
 
-	text := fmt.Sprint("Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n")
+	text := fmt.Sprintf("[ %s ] Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n", rollType)
+	players := make([]*Roller, 0, len(groupRollMap))
 	for _, v := range groupRollMap {
+		players = append(players, v)
+	}
+	sort.Slice(players, func(i, j int) bool {
+		return players[i].Index < players[j].Index
+	})
+	for _, v := range players {
 		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseDrawedText())
 	}
 
+	var inlineKeyboard tgbotapi.InlineKeyboardMarkup
+	switch rollType {
+	case DAILY_ROLL:
+		inlineKeyboard = rollDailyInlineKeyboard
+	case TOURNAMENT_ROLL:
+		inlineKeyboard = rollTournamentInlineKeyboard
+	default:
+		inlineKeyboard = drawCardKeyboard
+	}
 	editMessage := tgbotapi.NewEditMessageTextAndMarkup(
 		chatId,
 		messageId,
 		text,
-		drawCardKeyboard)
+		inlineKeyboard)
 	handler.bot.Send(editMessage)
 
 	return
 }
 
-func (handler *MessageHandler) draw_card_query_finish(update *tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+func (handler *MessageHandler) draw_card_query_finish(update *tgbotapi.Update, msg *tgbotapi.MessageConfig, rollType RollType) {
 	chatId := update.CallbackQuery.Message.Chat.ID
 	messageId := update.CallbackQuery.Message.MessageID
 
@@ -190,7 +197,8 @@ func (handler *MessageHandler) draw_card_query_finish(update *tgbotapi.Update, m
 	}
 
 	text := fmt.Sprintf(
-		"[ Deck Draw ] Finished by %s \n\n",
+		"[ %s ] Finished by %s \n\n",
+		rollType,
 		fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
 	)
 	for _, v := range groupRollMap {
