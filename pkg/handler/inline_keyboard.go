@@ -150,6 +150,7 @@ func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgb
 	}
 
 	text := fmt.Sprintf("[ %s ] Hãy rút cho mình 1 lá bài may mắn nào mấy con báo!\n\n", rollType)
+	// sort
 	players := make([]*Roller, 0, len(groupRollMap))
 	for _, v := range groupRollMap {
 		players = append(players, v)
@@ -157,6 +158,7 @@ func (handler *MessageHandler) draw_card_query(update *tgbotapi.Update, msg *tgb
 	sort.Slice(players, func(i, j int) bool {
 		return players[i].Index < players[j].Index
 	})
+	// end sort
 	for _, v := range players {
 		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseDrawedText())
 	}
@@ -201,7 +203,16 @@ func (handler *MessageHandler) draw_card_query_finish(update *tgbotapi.Update, m
 		rollType,
 		fmt.Sprintf("@%s", update.CallbackQuery.From.UserName),
 	)
+	// sort
+	players := make([]*Roller, 0, len(groupRollMap))
 	for _, v := range groupRollMap {
+		players = append(players, v)
+	}
+	sort.Slice(players, func(i, j int) bool {
+		return players[i].Index < players[j].Index
+	})
+	// end sort
+	for _, v := range players {
 		text += fmt.Sprintf("%d. %s\n", v.Index, v.parseDrawedText())
 	}
 
